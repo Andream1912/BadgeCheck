@@ -1,0 +1,2 @@
+SSID = "IphoneAndrea"
+PASSWORD = "ciaociao"
