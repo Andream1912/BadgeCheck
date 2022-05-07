@@ -15,7 +15,6 @@ rfid_cs = D15
 buzzer = D22
 #-------------JOB PER AGGIUNGERE UN NUOVO DIPENDENTE--------------#
 def addUser(agent,args):
-    global rows
     uid = args['uid']
     nome = args['nome']
     cognome = args['cognome']
@@ -53,8 +52,8 @@ def cardRecognize(id):
     lcd.putstr("Accesso\nConsentito")
     gpio.high(green_led)
     print(id)
-    gpio.low(green_led)
     sleep(2000)
+    gpio.low(green_led)
     lcd.clear()
     return count
 
@@ -69,7 +68,7 @@ def cardNotRecognize(id):
 
 
 def start(lcd):
-    global count,stopSystem,rows
+    global count,stopSystem
     lcd.putstr("Counter:%d" % (count))
     while True:
         if stopSystem == False:
@@ -131,14 +130,12 @@ except Exception as e:
 agent = zdm.Agent(jobs={"control": control})
 agent.start()
 #--------------Apertura file csv con Lettura UID----------------------#
-x = csv.CSVReader("/Users/andea/Desktop/IOT/resources/dipendenti.csv") #File in cui ci sono tutti i dipendenti registrati nel sistema
-print(x.read())
 
 #-------------avvio thread-------------#
 count = 0
 stopSystem = False
 lcd.putstr("Counter:%d" % (count))
-#thread(target=start(lcd))
+thread(target=start(lcd))
 # header = next(file) #Ci sarà l'header del file csv
 # rows = {}
 # for row in csvreader:
