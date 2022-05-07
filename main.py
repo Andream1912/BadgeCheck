@@ -131,8 +131,6 @@ except Exception as e:
 agent = zdm.Agent(jobs={"control": control})
 agent.start()
 #--------------Apertura file csv con Lettura UID----------------------#
-x = csv.CSVReader("/Users/andea/Desktop/IOT/resources/dipendenti.csv") #File in cui ci sono tutti i dipendenti registrati nel sistema
-print(x.read())
 
 #-------------avvio thread-------------#
 count = 0
