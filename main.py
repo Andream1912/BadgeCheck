@@ -13,18 +13,7 @@ red_led = D18
 rfid_rst = D27
 rfid_cs = D15
 buzzer = D22
-#-------------JOB PER AGGIUNGERE UN NUOVO DIPENDENTE--------------#
-def addUser(agent,args):
-    uid = args['uid']
-    nome = args['nome']
-    cognome = args['cognome']
-    # with open("./resources/dipendenti.csv","a",newline="") as fobject:
-    #     writerobject = writer(fobject)
-    #     writerobject.writerow(uid,nome,cognome)
-    #     rows[uid] = [nome,cognome]  
-    #     print(uid + "Aggiunto: ",nome + cognome)
-    #     lcd.putstr("Benvenuto ", nome)
-    #     fobject.close()
+#-------------JOB PER AGGIUNGERE UN NUOVO DIPENDENTE--------------#    
 #-------------------JOB PER STOPPARE IL SISTEMA--------------------#
 def control(agent, args):
     global stopSystem
@@ -45,11 +34,12 @@ def control(agent, args):
         
 #------------Funzioni-------------#
 
-def cardRecognize(id):
+def cardRecognize(uid,diz):
     global count
     count += 1
-    agent.publish(payload={"uid": id}, tag="uid")
-    lcd.putstr("Accesso\nConsentito")
+    user = diz.get[uid]
+    agent.publish(payload={"uid": uid,"name":user[0],"surname":user[1]}, tag="user")
+    lcd.putstr("Benvenuto\n," + user[0])
     gpio.high(green_led)
     print(id)
     sleep(2000)
@@ -65,6 +55,7 @@ def cardNotRecognize(id):
     sleep(1500)
     gpio.low(buzzer)
     gpio.low(red_led)
+    lcd.clear()
 
 
 def start(lcd):
@@ -78,8 +69,8 @@ def start(lcd):
                 if stat == rdr.OK:
                     card_id = "0x%02x%02x%02x%02x" % (
                         raw_uid[0], raw_uid[1], raw_uid[2], raw_uid[3])
-                    if card_id == "0x9987afb1": # if card_id in rows: GESTIONE ENTRATA E USCITA
-                        count = cardRecognize(card_id)
+                    if card_id in diz: # if card_id in rows: GESTIONE ENTRATA E USCITA
+                        count = cardRecognize(diz,card_id)
                     else:
                         cardNotRecognize(card_id)
                     lcd.putstr("Counter:%d" % (count))
@@ -112,7 +103,7 @@ try:
     lcd.putstr("Configurazione\nWifi...")
     wifi.configure(ssid=credentials.SSID, password=credentials.PASSWORD)
     wifi.start()
-    sleep(7000)
+    sleep(5000)
     lcd.putstr("Connessione\nRiuscita")
     sleep(1000)
 except WifiBadPassword:
@@ -130,17 +121,16 @@ except Exception as e:
 agent = zdm.Agent(jobs={"control": control})
 agent.start()
 #--------------Apertura file csv con Lettura UID----------------------#
-
+diz = {}
+file = csv.CSVReader("/zerynth/dipendenti.csv",has_header=True,quotechar="|")
+for element in file:
+    if element[0] != "uid":
+        uid = "0" + element[0]
+        diz[uid] = element[1],element[2] #Inserisco nel dizionario tutti i dipendenti riconosciuti tramite uid
+        sleep(1000)
+file.close()
 #-------------avvio thread-------------#
 count = 0
 stopSystem = False
 lcd.putstr("Counter:%d" % (count))
 thread(target=start(lcd))
-# header = next(file) #Ci sarà l'header del file csv
-# rows = {}
-# for row in csvreader:
-#     uid = row[0]
-#     nome = row[1]
-#     cognome = row[2]
-#     rows[uid] = [nome,cognome]
-# file.close()
