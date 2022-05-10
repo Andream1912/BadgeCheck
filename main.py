@@ -49,7 +49,7 @@ def cardRecognize(diz, uid):
     gpio.high(green_led)
     print(uid)
     rotate()
-    sleep(2000)
+    sleep(3500)
     rotateBack()
     sleep(1000)
     gpio.low(green_led)
@@ -64,24 +64,25 @@ def cardNotRecognize(id):
     sleep(1500)
     gpio.low(buzzer)
     gpio.low(red_led)
+    print(id)
     lcd.clear()
 
 
-def angle2pulse(angle):
-    return 1550+int(angle*500/90)
+#def angle2pulse(angle):
+    #return 1550+int(angle*500/90)
 
 
 def rotate():
-    global pulse,angle
-    angle += 180
-    pulse = angle2pulse(angle)
+    global pulse#,angle
+    #angle += 180
+    pulse = 2500 #angle2pulse(angle)
     pwm.write(servo, 20000, pulse, MICROS)
 
 
 def rotateBack():
-    global pulse,angle
-    angle -= 180
-    pulse = angle2pulse(angle)
+    global pulse#,angle
+    #angle -= 180
+    pulse = 1500 #angle2pulse(angle)
     pwm.write(servo, 20000, pulse, MICROS)
 
 

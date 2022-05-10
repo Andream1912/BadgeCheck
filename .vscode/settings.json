@@ -1,14 +1,15 @@
 {
     "python.terminal.activateEnvironment": false,
-    "python.pythonPath": "/Users/andea/.zerynth3/dist/sys/python/bin/python3",
-    "python.linting.pylintPath": "/Users/andea/.zerynth3/dist/sys/python/bin/python3",
+    "python.pythonPath": "C:/Users/sly3/zerynth3/dist/sys/python/python.exe",
+    "python.linting.pylintPath": "C:/Users/sly3/zerynth3/dist/sys/python/Scripts/pylint.exe",
     "python.autoComplete.extraPaths": [
-        "/Users/andea/.zerynth3/dist/libs",
-        "/Users/andea/.zerynth3/dist/libs/stdlib"
+        "C:/Users/sly3/zerynth3/dist/libs",
+        "C:/Users/sly3/zerynth3/dist/libs/stdlib"
     ],
     "python.linting.pylintArgs": [
-        "--rcfile=/Users/andea/.zerynth3/dist/toolchain/linter/zlintrc"
+        "--rcfile=C:/Users/sly3/zerynth3/dist/toolchain/linter/zlintrc"
     ],
     "python.languageServer": "Jedi",
-    "python.linting.pylintEnabled": true
+    "python.linting.pylintEnabled": true,
+    "python.linting.enabled": true
 }
