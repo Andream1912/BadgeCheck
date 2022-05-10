@@ -15,6 +15,7 @@ rfid_rst = D27
 rfid_cs = D15
 buzzer = D22
 servo = D23
+button = D19
 #-------------JOB PER AGGIUNGERE UN NUOVO DIPENDENTE--------------#
 #-------------------JOB PER STOPPARE IL SISTEMA--------------------#
 
@@ -42,12 +43,11 @@ def control(agent, args):
 def cardRecognize(diz, uid):
     global count
     count += 1
-    print(diz)
     print(uid)
-    #agent.publish(payload={"uid":uid, "name": user[0], "surname": user[1]}, tag="user")
-    lcd.putstr("Benvenuto\n")
+    user = diz[uid]
+    agent.publish(payload={"uid":uid, "name": user[0], "surname": user[1],"Entrance":True}, tag="user")
+    lcd.putstr("Benvenuto\n"+ user[0])
     gpio.high(green_led)
-    print(uid)
     rotate()
     sleep(3500)
     rotateBack()
@@ -67,24 +67,21 @@ def cardNotRecognize(id):
     print(id)
     lcd.clear()
 
-
-#def angle2pulse(angle):
-    #return 1550+int(angle*500/90)
-
-
 def rotate():
-    global pulse#,angle
-    #angle += 180
-    pulse = 2500 #angle2pulse(angle)
+    global pulse
+    pulse = 2500
     pwm.write(servo, 20000, pulse, MICROS)
 
 
 def rotateBack():
-    global pulse#,angle
-    #angle -= 180
-    pulse = 1500 #angle2pulse(angle)
+    global pulse
+    pulse = 1500
     pwm.write(servo, 20000, pulse, MICROS)
 
+def pressButton():
+    rotate()
+    sleep(3500)
+    rotateBack()
 
 def start(lcd):
     global count, stopSystem, diz
@@ -112,6 +109,7 @@ gpio.mode(green_led, OUTPUT)
 gpio.mode(red_led, OUTPUT)
 gpio.mode(buzzer, OUTPUT)
 gpio.mode(servo, OUTPUT)
+gpio.mode(button,INPUT_PULLDOWN)
 #----------Inizializzazione schermo LCD i2C----------------#
 lcd = None
 i2cObj = None
@@ -160,6 +158,7 @@ for element in file:
         sleep(1000)
 file.close()
 #-------------avvio thread-------------#
+gpio.on_fall(button,pressButton,pull=INPUT_PULLDOWN,debounce=1)
 count = 0
 stopSystem = False
 lcd.putstr("Counter:%d" % (count))

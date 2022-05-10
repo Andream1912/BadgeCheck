@@ -8,14 +8,14 @@
                 "kind": "test",
                 "isDefault": true
             },
-            "command": "C:/Users/sly3/zerynth3/dist/sys/python/python.exe",
+            "command": "/Users/andea/.zerynth3/dist/sys/python/bin/python3",
             "args": [
                 "-I",
                 "-u",
-                "C:/Users/sly3/zerynth3/dist/toolchain/ztc.py",
+                "/Users/andea/.zerynth3/dist/toolchain/ztc.py",
                 "device",
                 "console",
-                "c:\\Users\\sly3\\OneDrive\\Documenti\\Visual Code Projects\\Zerynth vscode\\progetto_iot"
+                "/Users/andea/Desktop/IOT"
             ],
             "presentation": {
                 "echo": true,
