@@ -1,7 +1,8 @@
 import gpio
 import spi
 
-class MFRC522:
+
+class RFID:
 
     OK = 0
     NOTAGERR = 1
@@ -16,15 +17,8 @@ class MFRC522:
         self.gpioRst = gpioRst
         self.gpioCs = gpioCs
         self.spi_port = spi_port
-        gpio.mode(gpioRst, OUTPUT)
-        gpio.set(gpioRst, LOW)
-        gpio.mode(self.gpioCs, OUTPUT)
-        gpio.set(self.gpioCs, HIGH)
-        sck = gpio.mode(D14, OUTPUT)
-        mosi = gpio.mode(D13, OUTPUT)
-        miso = gpio.mode(D12, INPUT)
         self.spi = spi.Spi(self.gpioCs, spi=self.spi_port,
-                        clock=1000000, mode=spi.SPI_MODE_LOW_FIRST)
+                           clock=1000000, mode=spi.SPI_MODE_LOW_FIRST)
         gpio.set(gpioRst, HIGH)
         self.init()
 
