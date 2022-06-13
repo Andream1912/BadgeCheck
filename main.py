@@ -8,7 +8,7 @@ import credentials
 from zdm import zdm
 from stdlib import csv
 
-#--------Inizializzazione Variabili--------------#
+#--------Variable Initialization--------------#
 green_led = D21
 red_led = D18
 rfid_rst = D27
@@ -20,9 +20,9 @@ period = 20000
 checkEntrance = []
 diz = {}
 stopSystem = False
-#-------------------JOB PER ZDM CLOUD--------------------#
+#-------------------JOB FOR ZDM CLOUD--------------------#
 
-# Funzione remota per resettare un badge passandogli un uid
+#Remote function to reset a badge by passing it a uid
 
 
 def removeUser(agent, args):
@@ -42,7 +42,7 @@ def removeUser(agent, args):
         sleep(3000)
         lcd.putstr("Counter:%d" % (len(checkEntrance)))
 
-# Funzione remota per assegnare un nuovo badge ad un nuovo dipendente
+# Remote function to assign a new badge to a new employee
 
 
 def addUser(agent, args):
@@ -84,7 +84,7 @@ def addUser(agent, args):
             attempt -= 1
             sleep(1000)
 
-# Funzione remota per bloccare il sistema tramite lo zerynth cloud
+# Remote function to lock the system through the zerynth cloud
 
 
 def control(agent, args):
@@ -106,7 +106,7 @@ def control(agent, args):
 
 #------------Funzioni-------------#
 
-# Badge riconosciuto
+# Badge Recognized
 
 
 def cardRecognize(diz, uid):
@@ -130,7 +130,7 @@ def cardRecognize(diz, uid):
     gpio.low(green_led)
     lcd.clear()
 
-# Badge non riconosciuto
+# Badge not Recognized
 
 
 def cardNotRecognize(id):
@@ -143,7 +143,7 @@ def cardNotRecognize(id):
     print(id)
     lcd.clear()
 
-# Funzione per far ruotare il servo motore di 90°
+# Function to rotate the servo motor 90 °
 
 
 def rotate():
@@ -151,7 +151,7 @@ def rotate():
     pulse = 2500
     pwm.write(servo, period, pulse, MICROS)
 
-# Funzione per far ruotare il servo motore di -90°
+# Function to rotate the servo motor -90 °
 
 
 def rotateBack():
@@ -159,7 +159,7 @@ def rotateBack():
     pulse = 1500
     pwm.write(servo, period, pulse, MICROS)
 
-# Funzione per far aprire il tornello senza badge
+# Function to open the turnstile without a badge
 
 
 def pressButton():
@@ -181,7 +181,7 @@ def start():
                 if stat == rdr.OK:
                     card_id = "0x%02x%02x%02x%02x" % (
                         raw_uid[0], raw_uid[1], raw_uid[2], raw_uid[3])
-                    if card_id in diz:  # if card_id in rows: GESTIONE ENTRATA E USCITA
+                    if card_id in diz:  # if card_id in rows: ENTRY AND EXIT MANAGEMENT
                         cardRecognize(diz, card_id)
                     else:
                         cardNotRecognize(card_id)
@@ -192,19 +192,19 @@ def start():
             sleep(2000)
 
 
-#----------Inizializzazione Sensori---------------------------#
+#----------Sensors initialization---------------------------#
 gpio.mode(green_led, OUTPUT)
 gpio.mode(red_led, OUTPUT)
 gpio.mode(buzzer, OUTPUT)
 gpio.mode(servo, OUTPUT)
 gpio.mode(button, INPUT_PULLDOWN)
 gpio.on_fall(button, pressButton, pull=INPUT_PULLDOWN, debounce=1)
-#----------Inizializzazione schermo LCD i2C----------------#
+#----------I2C LCD screen initialization----------------#
 lcd = None
 i2cObj = None
 i2cObj = i2c.I2c(0x27, clock=400000)
 lcd = LCDI2C.I2cLcd(i2cObj, 2, 16)
-#----------Inizializzazione RFID SPI-----------------------#
+#----------SPI RFID initialization-----------------------#
 ###############################################
 #               3.3 -> 3.3                    #
 #               GND -> GND                    #
@@ -214,7 +214,7 @@ lcd = LCDI2C.I2cLcd(i2cObj, 2, 16)
 #               Miso -> D12                   #
 ###############################################
 rdr = RFID.RFID(rfid_rst, rfid_cs)
-#-------------Configurazione Wifi-------------#
+#-------------Wi-fi configuration-------------#
 try:
     lcd.putstr("Configurazione\nWifi...")
     wifi.configure(ssid=credentials.SSID, password=credentials.PASSWORD)
@@ -233,18 +233,18 @@ except WifiException:
     lcd.putstr("Errore Wi-Fi")
 except Exception as e:
     raise e
-#----------------zdm cloud-------------#
+#----------------Zdm Cloud-------------#
 agent = zdm.Agent(
     jobs={"control": control, "addUser": addUser, "remove": removeUser})
 agent.start()
-#--------------Apertura file csv con Lettura UID----------------------#
+#--------------Opening csv file with UID reading----------------------#
 file = csv.CSVReader("/zerynth/dipendenti.csv", has_header=True, quotechar="|")
 for element in file:
-    if element[0] != "uid":  # SALTO DELL'HEADER
+    if element[0] != "uid":  # SKIP HEADER
         uid = "0" + element[0]
-        # Inserisco nel dizionario tutti i dipendenti riconosciuti tramite uid
+        # I put in the dictionary all employees recognized by uid
         diz[uid] = element[1], element[2]
 file.close()
-#-------------avvio thread-------------#
+#-------------Start Thread-------------#
 lcd.putstr("Counter:%d" % (len(checkEntrance)))
 thread(start)

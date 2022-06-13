@@ -4,10 +4,6 @@ import gpio
 
 
 class LcdApi:
-    # The following constant names were lifted from the avrlib lcd.h
-    # header file, however, I changed the definitions from bit numbers
-    # to bit masks.
-    #
     # LCD controller command set
     LCD_CLR = 0x01              # DB0: clear display
     LCD_HOME = 0x02             # DB1: return to home position
