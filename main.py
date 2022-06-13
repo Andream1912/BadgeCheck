@@ -7,7 +7,8 @@ from networking import wifi
 import credentials
 from zdm import zdm
 from stdlib import csv
-#--------Inizializzazione Variabili globali--------------#
+
+#--------Inizializzazione Variabili--------------#
 green_led = D21
 red_led = D18
 rfid_rst = D27
@@ -17,8 +18,11 @@ servo = D23
 button = D19
 period = 20000
 checkEntrance = []
+diz = {}
 stopSystem = False
 #-------------------JOB PER ZDM CLOUD--------------------#
+
+# Funzione remota per resettare un badge passandogli un uid
 
 
 def removeUser(agent, args):
@@ -37,6 +41,8 @@ def removeUser(agent, args):
         # file.close()
         sleep(3000)
         lcd.putstr("Counter:%d" % (len(checkEntrance)))
+
+# Funzione remota per assegnare un nuovo badge ad un nuovo dipendente
 
 
 def addUser(agent, args):
@@ -78,6 +84,8 @@ def addUser(agent, args):
             attempt -= 1
             sleep(1000)
 
+# Funzione remota per bloccare il sistema tramite lo zerynth cloud
+
 
 def control(agent, args):
     global stopSystem, checkEntrance
@@ -98,17 +106,21 @@ def control(agent, args):
 
 #------------Funzioni-------------#
 
+# Badge riconosciuto
+
 
 def cardRecognize(diz, uid):
     global checkEntrance
     user = diz[uid]
     if uid in checkEntrance:
         checkEntrance.remove(uid)
-        agent.publish(payload={"uid": uid, "name": user[0], "surname": user[1], "Entrance": False}, tag="user")
+        agent.publish(payload={
+                      "uid": uid, "name": user[0], "surname": user[1], "Entrance": False}, tag="user")
         lcd.putstr("Arrivederci\n" + user[0])
     else:
         checkEntrance.append(uid)
-        agent.publish(payload={"uid": uid, "name": user[0], "surname": user[1], "Entrance": True}, tag="user")
+        agent.publish(payload={
+                      "uid": uid, "name": user[0], "surname": user[1], "Entrance": True}, tag="user")
         lcd.putstr("Benvenuto\n" + user[0])
     gpio.high(green_led)
     rotate()
@@ -117,6 +129,8 @@ def cardRecognize(diz, uid):
     sleep(1000)
     gpio.low(green_led)
     lcd.clear()
+
+# Badge non riconosciuto
 
 
 def cardNotRecognize(id):
@@ -129,11 +143,15 @@ def cardNotRecognize(id):
     print(id)
     lcd.clear()
 
+# Funzione per far ruotare il servo motore di 90°
+
 
 def rotate():
     global pulse
     pulse = 2500
     pwm.write(servo, period, pulse, MICROS)
+
+# Funzione per far ruotare il servo motore di -90°
 
 
 def rotateBack():
@@ -141,11 +159,15 @@ def rotateBack():
     pulse = 1500
     pwm.write(servo, period, pulse, MICROS)
 
+# Funzione per far aprire il tornello senza badge
+
 
 def pressButton():
     rotate()
     sleep(2500)
     rotateBack()
+
+# Thread Main Function
 
 
 def start():
@@ -170,7 +192,7 @@ def start():
             sleep(2000)
 
 
-#----------Inizializzazione Sensor---------------------------#
+#----------Inizializzazione Sensori---------------------------#
 gpio.mode(green_led, OUTPUT)
 gpio.mode(red_led, OUTPUT)
 gpio.mode(buzzer, OUTPUT)
@@ -216,7 +238,6 @@ agent = zdm.Agent(
     jobs={"control": control, "addUser": addUser, "remove": removeUser})
 agent.start()
 #--------------Apertura file csv con Lettura UID----------------------#
-diz = {}
 file = csv.CSVReader("/zerynth/dipendenti.csv", has_header=True, quotechar="|")
 for element in file:
     if element[0] != "uid":  # SALTO DELL'HEADER
