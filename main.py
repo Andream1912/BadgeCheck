@@ -1,3 +1,4 @@
+from bsp import board
 import peripherals.lcdi2c as LCDI2C
 import peripherals.rfid as RFID
 import gpio
@@ -7,6 +8,7 @@ from networking import wifi
 import credentials
 from zdm import zdm
 from stdlib import csv
+from protocols import mqtt
 
 #--------Variable Initialization--------------#
 green_led = D21
@@ -129,6 +131,7 @@ def cardRecognize(diz, uid):
     sleep(1000)
     gpio.low(green_led)
     lcd.clear()
+    
 
 # Badge not Recognized
 
@@ -142,6 +145,7 @@ def cardNotRecognize(id):
     gpio.low(red_led)
     print(id)
     lcd.clear()
+    agent.publish(payload={"warning":True},tag="warning")
 
 # Function to rotate the servo motor 90 °
 
@@ -248,3 +252,58 @@ file.close()
 #-------------Start Thread-------------#
 lcd.putstr("Counter:%d" % (len(checkEntrance)))
 thread(start)
+#-------------Mqtt ricezione-----------------#
+def run():
+    try:
+        print("sta partendo il loop")
+        client.loop()
+    except Exception as e:
+        print("run thread exec,e")
+        sleep(6000)
+
+def callback(client,topic,message):
+    global checkEntrance
+    print("ricevuto",message,"on",topic)
+    # if topic=="/IoT2022/SmartAcces":
+    #     if message=="hey":
+    #         print("sono hey")
+    #     elif message=="cazzo":
+    #         print("sono cazzo")
+    user = diz[message]
+    if message in checkEntrance:
+        checkEntrance.remove(message)
+        agent.publish(payload={
+                      "uid": message, "name": user[0], "surname": user[1], "Entrance": False}, tag="user")
+        lcd.putstr("Arrivederci\n" + user[0])
+        sleep(2000)
+        lcd.clear()
+        lcd.putstr("Counter:%d" % (len(checkEntrance)))
+    else:
+        agent.publish(payload={"warning":True},tag="warning")
+
+try:
+    print(wifi.info())
+    client=mqtt.MQTT("test.mosquitto.org","ingresso")
+    client.on("/IoT2022/SmartAcces",callback,0)
+    client.connect()
+    thread(run)
+    cnt = 0
+    while True:
+        sleep(5000)
+        if client.is_connected():
+            break
+        cnt += 10
+        print("waiting...",cnt)
+        if cnt>10:
+            print("client not connected")
+    while True:
+        print("main running")
+        sleep(5000)
+except WifiBadPassword:
+    print("Bad Password")
+except WifiBadSSID:
+    print("Bad SSID")
+except WifiException:
+    print("Generic Wifi Exception")
+except Exception as e:
+    raise e
