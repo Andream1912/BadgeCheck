@@ -20,8 +20,9 @@ checkEntrance = []
 stopSystem = False
 #-------------------JOB PER ZDM CLOUD--------------------#
 
-def removeUser(agent,args):
-    global diz,checkEntrance
+
+def removeUser(agent, args):
+    global diz, checkEntrance
     uid_remove = args["uid"]
     if uid_remove in diz:
         if uid_remove in checkEntrance:
@@ -29,9 +30,15 @@ def removeUser(agent,args):
         user = diz[uid_remove]
         lcd.putstr(user[0] + "\nRimosso")
         diz.pop(uid_remove)
-        sleep(1000)
-        lcd.clear()
-            
+        #file = csv.CSVWrite("/zerynth/dipendenti.csv",as_dict=True)
+        #header = ["uid","name","surname"]
+        # file.write_header(header)
+        # file.write(diz)
+        # file.close()
+        sleep(3000)
+        lcd.putstr("Counter:%d" % (len(checkEntrance)))
+
+
 def addUser(agent, args):
     global stopSystem, diz
     stopSystem = True
@@ -39,6 +46,7 @@ def addUser(agent, args):
     nome = args["name"]
     cognome = args["surname"]
     while True:
+        lcd.putstr("Appoggia la\nCarta")
         (stat, tag_type) = rdr.request(rdr.REQIDL)
         if stat == rdr.OK:
             (stat, raw_uid) = rdr.anticoll()
@@ -49,12 +57,13 @@ def addUser(agent, args):
                     diz[card_id] = [nome, cognome]
                     #file = csv.CSVWrite("/zerynth/dipendenti.csv",as_dict=True)
                     #header = ["uid","name","surname"]
-                    #file.write_header(header)
-                    #file.write(diz)
-                    #file.close() 
-                    lcd.putstr("Aggiunto" + nome + "\nID:"+card_id)
-                    sleep(1000)
+                    # file.write_header(header)
+                    # file.write(diz)
+                    # file.close()
+                    lcd.putstr("Aggiunto " + nome)
+                    sleep(2000)
                     stopSystem = False
+                    lcd.putstr("Counter:%d" % (len(checkEntrance)))
                     break
                 else:
                     lcd.putstr("Carta già registrata\nnel sistema!")
@@ -62,6 +71,8 @@ def addUser(agent, args):
                     break
         if attempt < 1:  # Effettua 10 tentativi per l'aggiunta di un nuovo dipendente
             stopSystem = False
+            lcd.putstr("Tempo Scaduto")
+            lcd.clear()
             break
         else:
             attempt -= 1
@@ -93,11 +104,11 @@ def cardRecognize(diz, uid):
     user = diz[uid]
     if uid in checkEntrance:
         checkEntrance.remove(uid)
-        #agent.publish(payload={"uid": uid, "name": user[0], "surname": user[1], "Entrance": False}, tag="user")
+        agent.publish(payload={"uid": uid, "name": user[0], "surname": user[1], "Entrance": False}, tag="user")
         lcd.putstr("Arrivederci\n" + user[0])
     else:
         checkEntrance.append(uid)
-        #agent.publish(payload={"uid": uid, "name": user[0], "surname": user[1], "Entrance": True}, tag="user")
+        agent.publish(payload={"uid": uid, "name": user[0], "surname": user[1], "Entrance": True}, tag="user")
         lcd.putstr("Benvenuto\n" + user[0])
     gpio.high(green_led)
     rotate()
@@ -155,7 +166,10 @@ def start():
                     lcd.putstr("Counter:%d" % (len(checkEntrance)))
                     sleep(2000)
         else:
+            print("Sistema fermo")
             sleep(2000)
+
+
 #----------Inizializzazione Sensor---------------------------#
 gpio.mode(green_led, OUTPUT)
 gpio.mode(red_led, OUTPUT)
@@ -181,7 +195,7 @@ rdr = RFID.RFID(rfid_rst, rfid_cs)
 #-------------Configurazione Wifi-------------#
 try:
     lcd.putstr("Configurazione\nWifi...")
-    wifi.configure(ssid=credentials.SSID,password=credentials.PASSWORD)
+    wifi.configure(ssid=credentials.SSID, password=credentials.PASSWORD)
     wifi.start()
     sleep(3000)
     lcd.putstr("Connessione\nRiuscita")
@@ -198,7 +212,8 @@ except WifiException:
 except Exception as e:
     raise e
 #----------------zdm cloud-------------#
-agent = zdm.Agent()
+agent = zdm.Agent(
+    jobs={"control": control, "addUser": addUser, "remove": removeUser})
 agent.start()
 #--------------Apertura file csv con Lettura UID----------------------#
 diz = {}
