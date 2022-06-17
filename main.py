@@ -25,8 +25,6 @@ stopSystem = False
 #-------------------JOB FOR ZDM CLOUD--------------------#
 
 #Remote function to reset a badge by passing it a uid
-
-
 def removeUser(agent, args):
     global diz, checkEntrance
     uid_remove = args["uid"]
@@ -45,8 +43,6 @@ def removeUser(agent, args):
         lcd.putstr("Counter:%d" % (len(checkEntrance)))
 
 # Remote function to assign a new badge to a new employee
-
-
 def addUser(agent, args):
     global stopSystem, diz
     stopSystem = True
@@ -87,8 +83,6 @@ def addUser(agent, args):
             sleep(1000)
 
 # Remote function to lock the system through the zerynth cloud
-
-
 def control(agent, args):
     global stopSystem, checkEntrance
     command = args["control"]
@@ -106,7 +100,7 @@ def control(agent, args):
     else:
         lcd.putstr("Parametro passato dal JOB errato")
 
-#------------Funzioni-------------#
+#------------Function-------------#
 
 # Badge Recognized
 
@@ -134,8 +128,6 @@ def cardRecognize(diz, uid):
     
 
 # Badge not Recognized
-
-
 def cardNotRecognize(id):
     lcd.putstr("Accesso\nNon Consentito")
     gpio.high(red_led)
@@ -148,32 +140,24 @@ def cardNotRecognize(id):
     agent.publish(payload={"warning":True},tag="warning")
 
 # Function to rotate the servo motor 90 °
-
-
 def rotate():
     global pulse
     pulse = 2500
     pwm.write(servo, period, pulse, MICROS)
 
 # Function to rotate the servo motor -90 °
-
-
 def rotateBack():
     global pulse
     pulse = 1500
     pwm.write(servo, period, pulse, MICROS)
 
 # Function to open the turnstile without a badge
-
-
 def pressButton():
     rotate()
     sleep(2500)
     rotateBack()
 
 # Thread Main Function
-
-
 def start():
     global stopSystem, checkEntrance
     lcd.putstr("Counter:%d" % (len(checkEntrance)))
@@ -252,7 +236,7 @@ file.close()
 #-------------Start Thread-------------#
 lcd.putstr("Counter:%d" % (len(checkEntrance)))
 thread(start)
-#-------------Mqtt ricezione-----------------#
+#-------------Mqtt's receiving end-----------------#
 def run():
     try:
         print("sta partendo il loop")
@@ -260,15 +244,10 @@ def run():
     except Exception as e:
         print("run thread exec,e")
         sleep(6000)
-
+#callback that controls if the message received from the exit is in the dictionary and then removes it
 def callback(client,topic,message):
     global checkEntrance
     print("ricevuto",message,"on",topic)
-    # if topic=="/IoT2022/SmartAcces":
-    #     if message=="hey":
-    #         print("sono hey")
-    #     elif message=="cazzo":
-    #         print("sono cazzo")
     user = diz[message]
     if message in checkEntrance:
         checkEntrance.remove(message)
@@ -283,7 +262,7 @@ def callback(client,topic,message):
 
 try:
     print(wifi.info())
-    client=mqtt.MQTT("test.mosquitto.org","ingresso")
+    client=mqtt.MQTT("test.mosquitto.org","Entrance")
     client.on("/IoT2022/SmartAcces",callback,0)
     client.connect()
     thread(run)
@@ -299,11 +278,5 @@ try:
     while True:
         print("main running")
         sleep(5000)
-except WifiBadPassword:
-    print("Bad Password")
-except WifiBadSSID:
-    print("Bad SSID")
-except WifiException:
-    print("Generic Wifi Exception")
 except Exception as e:
     raise e
