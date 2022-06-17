@@ -264,11 +264,6 @@ def run():
 def callback(client,topic,message):
     global checkEntrance
     print("ricevuto",message,"on",topic)
-    # if topic=="/IoT2022/SmartAcces":
-    #     if message=="hey":
-    #         print("sono hey")
-    #     elif message=="cazzo":
-    #         print("sono cazzo")
     user = diz[message]
     if message in checkEntrance:
         checkEntrance.remove(message)
