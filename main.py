@@ -22,11 +22,28 @@ period = 20000
 checkEntrance = []
 diz = {}
 stopSystem = False
+#--------------------------------MQTT--------------------------------#
+def run():
+    try:
+        client.loop()
+    except Exception as e:
+        sleep(6000)
+#callback that controls if the message received from the exit is in the dictionary and then removes it
+def callback(client,topic,message):
+    global checkEntrance
+    user = diz[message]
+    if message in checkEntrance:
+        checkEntrance.remove(message)
+        agent.publish(payload={
+                      "uid": message, "name": user[0], "surname": user[1], "Entrance": False}, tag="user")
+        lcd.putstr("Arrivederci\n" + user[0])
+        sleep(2000)
+        lcd.clear()
+        lcd.putstr("Counter:%d" % (len(checkEntrance)))
+
 #-------------------JOB FOR ZDM CLOUD--------------------#
 
 #Remote function to reset a badge by passing it a uid
-
-
 def removeUser(agent, args):
     global diz, checkEntrance
     uid_remove = args["uid"]
@@ -45,8 +62,6 @@ def removeUser(agent, args):
         lcd.putstr("Counter:%d" % (len(checkEntrance)))
 
 # Remote function to assign a new badge to a new employee
-
-
 def addUser(agent, args):
     global stopSystem, diz
     stopSystem = True
@@ -77,7 +92,7 @@ def addUser(agent, args):
                     lcd.putstr("Carta già registrata\nnel sistema!")
                     stopSystem = False
                     break
-        if attempt < 1:  # Effettua 10 tentativi per l'aggiunta di un nuovo dipendente
+        if attempt < 1:  # Make 10 attempts to add a new employee
             stopSystem = False
             lcd.putstr("Tempo Scaduto")
             lcd.clear()
@@ -87,8 +102,6 @@ def addUser(agent, args):
             sleep(1000)
 
 # Remote function to lock the system through the zerynth cloud
-
-
 def control(agent, args):
     global stopSystem, checkEntrance
     command = args["control"]
@@ -106,7 +119,7 @@ def control(agent, args):
     else:
         lcd.putstr("Parametro passato dal JOB errato")
 
-#------------Funzioni-------------#
+#------------Function-------------#
 
 # Badge Recognized
 
@@ -115,27 +128,28 @@ def cardRecognize(diz, uid):
     global checkEntrance
     user = diz[uid]
     if uid in checkEntrance:
-        checkEntrance.remove(uid)
-        agent.publish(payload={
-                      "uid": uid, "name": user[0], "surname": user[1], "Entrance": False}, tag="user")
-        lcd.putstr("Arrivederci\n" + user[0])
+        lcd.putstr(user[0] +" gia'\nall'interno")
+        gpio.high(red_led)
+        gpio.high(buzzer)
+        sleep(1500)
+        gpio.low(buzzer)
+        gpio.low(red_led)
+        lcd.clear()
     else:
         checkEntrance.append(uid)
         agent.publish(payload={
                       "uid": uid, "name": user[0], "surname": user[1], "Entrance": True}, tag="user")
         lcd.putstr("Benvenuto\n" + user[0])
-    gpio.high(green_led)
-    rotate()
-    sleep(2500)
-    rotateBack()
-    sleep(1000)
-    gpio.low(green_led)
-    lcd.clear()
+        gpio.high(green_led)
+        rotate()
+        sleep(2500)
+        rotateBack()
+        sleep(1000)
+        gpio.low(green_led)
+        lcd.clear()
     
 
 # Badge not Recognized
-
-
 def cardNotRecognize(id):
     lcd.putstr("Accesso\nNon Consentito")
     gpio.high(red_led)
@@ -143,37 +157,28 @@ def cardNotRecognize(id):
     sleep(1500)
     gpio.low(buzzer)
     gpio.low(red_led)
-    print(id)
     lcd.clear()
     agent.publish(payload={"warning":True},tag="warning")
 
 # Function to rotate the servo motor 90 °
-
-
 def rotate():
     global pulse
     pulse = 2500
     pwm.write(servo, period, pulse, MICROS)
 
 # Function to rotate the servo motor -90 °
-
-
 def rotateBack():
     global pulse
     pulse = 1500
     pwm.write(servo, period, pulse, MICROS)
 
 # Function to open the turnstile without a badge
-
-
 def pressButton():
     rotate()
     sleep(2500)
     rotateBack()
 
 # Thread Main Function
-
-
 def start():
     global stopSystem, checkEntrance
     lcd.putstr("Counter:%d" % (len(checkEntrance)))
@@ -192,7 +197,6 @@ def start():
                     lcd.putstr("Counter:%d" % (len(checkEntrance)))
                     sleep(2000)
         else:
-            print("Sistema fermo")
             sleep(2000)
 
 
@@ -223,17 +227,14 @@ try:
     lcd.putstr("Configurazione\nWifi...")
     wifi.configure(ssid=credentials.SSID, password=credentials.PASSWORD)
     wifi.start()
-    sleep(3000)
+    sleep(1500)
     lcd.putstr("Connessione\nRiuscita")
     sleep(1000)
 except WifiBadPassword:
-    print("Bad Password")
     lcd.putstr("Password Wi-Fi\n Sbagliata")
 except WifiBadSSID:
-    print("Bad SSID")
     lcd.putstr("Non trovo il Wi-Fi")
 except WifiException:
-    print("Generic Wifi Exception")
     lcd.putstr("Errore Wi-Fi")
 except Exception as e:
     raise e
@@ -252,53 +253,17 @@ file.close()
 #-------------Start Thread-------------#
 lcd.putstr("Counter:%d" % (len(checkEntrance)))
 thread(start)
-#-------------Mqtt ricezione-----------------#
-def run():
-    try:
-        print("sta partendo il loop")
-        client.loop()
-    except Exception as e:
-        print("run thread exec,e")
-        sleep(6000)
-
-def callback(client,topic,message):
-    global checkEntrance
-    print("ricevuto",message,"on",topic)
-    user = diz[message]
-    if message in checkEntrance:
-        checkEntrance.remove(message)
-        agent.publish(payload={
-                      "uid": message, "name": user[0], "surname": user[1], "Entrance": False}, tag="user")
-        lcd.putstr("Arrivederci\n" + user[0])
-        sleep(2000)
-        lcd.clear()
-        lcd.putstr("Counter:%d" % (len(checkEntrance)))
-    else:
-        agent.publish(payload={"warning":True},tag="warning")
-
+#-------------Mqtt's receiving end-----------------#
 try:
-    print(wifi.info())
-    client=mqtt.MQTT("test.mosquitto.org","ingresso")
+    client=mqtt.MQTT("test.mosquitto.org","Entrance")
     client.on("/IoT2022/SmartAcces",callback,0)
     client.connect()
     thread(run)
-    cnt = 0
     while True:
-        sleep(5000)
+        sleep(2500)
         if client.is_connected():
             break
-        cnt += 10
-        print("waiting...",cnt)
-        if cnt>10:
-            print("client not connected")
     while True:
-        print("main running")
         sleep(5000)
-except WifiBadPassword:
-    print("Bad Password")
-except WifiBadSSID:
-    print("Bad SSID")
-except WifiException:
-    print("Generic Wifi Exception")
 except Exception as e:
     raise e
